@@ -1,17 +1,19 @@
 import * as cheerio from "cheerio";
 import type { Element } from "domhandler";
-import type { NormalizedPage, SchemaBlock } from "../types/index.js";
+import type { NormalizedPage, PageKind, SchemaBlock } from "../types/index.js";
 
 export interface ParsePageInput {
   html: string;
   filePath: string;
   relativeFilePath: string;
   route: string;
+  kind?: PageKind | undefined;
   url?: string | undefined;
 }
 
 export function parseHtmlPage(input: ParsePageInput): NormalizedPage {
   const $ = cheerio.load(input.html);
+  const kind = input.kind ?? "page";
   const titles = $("title")
     .map((_, element) => cleanText($(element).text()))
     .get();
@@ -62,12 +64,13 @@ export function parseHtmlPage(input: ParsePageInput): NormalizedPage {
     filePath: input.filePath,
     relativeFilePath: input.relativeFilePath,
     route: input.route,
+    kind,
     url: input.url,
     titles,
     descriptions,
     canonicals,
     robotsDirectives,
-    indexable: !robotsDirectives.includes("noindex"),
+    indexable: kind === "page" && !robotsDirectives.includes("noindex"),
     headings,
     h1s: headings.filter((heading) => heading.level === 1).map((heading) => heading.text),
     images,

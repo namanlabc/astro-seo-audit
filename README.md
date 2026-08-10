@@ -136,7 +136,7 @@ The JSON is a machine-readable model rather than terminal text. It includes proj
 
 ```json
 {
-  "version": "0.1.1",
+  "version": "0.1.2",
   "score": 87,
   "scoreBreakdown": {
     "initial": 100,
@@ -179,6 +179,7 @@ The rules are deliberately conservative:
 - multiple H1 elements are not treated as a technical error;
 - `noindex` is a notice because intent cannot be inferred reliably;
 - empty image alt text is accepted as a valid decorative-image pattern; and
+- generated `404.html` documents are recognized as not-found pages and excluded from indexability-dependent canonical, orphan, duplicate, and sitemap checks; and
 - JSON-LD parsing does not claim rich-result eligibility.
 
 ## Configuration
@@ -190,7 +191,7 @@ Zero configuration works for typical static Astro builds. Optional settings can 
   "site": "https://example.com",
   "buildDir": "dist",
   "trailingSlash": "always",
-  "ignoreRoutes": ["/drafts/**", "/404.html"],
+  "ignoreRoutes": ["/drafts/**"],
   "orphanExclusions": ["/campaign/**"],
   "ignoredRules": ["twitter.card-missing"],
   "severityOverrides": {

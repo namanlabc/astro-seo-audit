@@ -1,5 +1,6 @@
 export type Severity = "error" | "warning" | "info";
 export type FindingScope = "page" | "site";
+export type PageKind = "page" | "not-found";
 
 export type RuleCategory =
   | "title"
@@ -66,6 +67,7 @@ export interface NormalizedPage {
   filePath: string;
   relativeFilePath: string;
   route: string;
+  kind: PageKind;
   url?: string | undefined;
   titles: string[];
   descriptions: string[];
@@ -114,6 +116,7 @@ export interface PageResult {
   path: string;
   url?: string | undefined;
   file: string;
+  kind: PageKind;
   indexable: boolean;
   findings: Finding[];
   passedRules: string[];

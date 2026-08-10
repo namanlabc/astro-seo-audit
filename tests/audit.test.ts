@@ -8,13 +8,17 @@ const fixtures = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtur
 describe("site audit", () => {
   it("audits a healthy generated Astro site without findings", async () => {
     const report = await audit({ cwd: path.join(fixtures, "healthy") });
-    expect(report.pagesScanned).toBe(3);
+    expect(report.pagesScanned).toBe(4);
     expect(report.summary.errors).toBe(0);
     expect(report.summary.warnings).toBe(0);
     expect(report.summary.info).toBe(0);
     expect(report.score).toBe(100);
     expect(report.project.astroDetected).toBe(true);
     expect(report.project.trailingSlash).toBe("always");
+    expect(report.pages.find((page) => page.file === "404.html")).toMatchObject({
+      kind: "not-found",
+      indexable: false,
+    });
   });
 
   it("finds page-level and site-wide problems from final HTML", async () => {

@@ -40,4 +40,17 @@ describe("HTML parser", () => {
     expect(page.schemas[0]).toMatchObject({ empty: true, valid: false });
     expect(page.schemas[1]).toMatchObject({ empty: false, valid: false });
   });
+
+  it("marks generated not-found documents as non-indexable", () => {
+    const page = parseHtmlPage({
+      html: `<html lang="en"><head><title>Page not found</title></head><body><h1>Not found</h1></body></html>`,
+      filePath: "/tmp/404.html",
+      relativeFilePath: "404.html",
+      route: "/404.html",
+      kind: "not-found",
+    });
+
+    expect(page.kind).toBe("not-found");
+    expect(page.indexable).toBe(false);
+  });
 });

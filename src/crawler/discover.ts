@@ -4,7 +4,7 @@ import fg from "fast-glob";
 import type { AuditConfig, NormalizedPage } from "../types/index.js";
 import { parseHtmlPage } from "../parser/html.js";
 import { matchesPattern } from "../utils/patterns.js";
-import { absolutePageUrl, htmlFileToRoute, routeWithPolicy } from "../utils/urls.js";
+import { absolutePageUrl, htmlFileKind, htmlFileToRoute, routeWithPolicy } from "../utils/urls.js";
 
 export async function discoverPages(
   buildDir: string,
@@ -35,6 +35,7 @@ export async function discoverPages(
           filePath,
           relativeFilePath,
           route,
+          kind: htmlFileKind(relativeFilePath),
           url: absolutePageUrl(config.site, route),
         });
       }),

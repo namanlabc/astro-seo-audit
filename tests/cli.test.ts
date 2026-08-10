@@ -26,7 +26,7 @@ describe("CLI", () => {
     const output = io(path.join(fixtures, "healthy"));
     expect(await runCli(["--format", "json"], output.adapter)).toBe(0);
     const report = JSON.parse(output.stdout.join("")) as Record<string, unknown>;
-    expect(report).toMatchObject({ score: 100, pagesScanned: 3 });
+    expect(report).toMatchObject({ score: 100, pagesScanned: 4, version: "0.1.2" });
     expect(report.pages).toBeInstanceOf(Array);
     expect(report.siteFindings).toBeInstanceOf(Array);
   });
