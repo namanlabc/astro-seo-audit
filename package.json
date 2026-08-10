@@ -1,6 +1,6 @@
 {
   "name": "astro-seo-audit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Catch SEO problems in Astro before you deploy.",
   "type": "module",
   "license": "MIT",
@@ -15,6 +15,7 @@
   },
   "keywords": [
     "astro",
+    "astro-integration",
     "seo",
     "audit",
     "cli",
@@ -47,6 +48,14 @@
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "peerDependencies": {
+    "astro": ">=5.0.0 <8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "astro": {
+      "optional": true
+    }
   },
   "dependencies": {
     "cheerio": "^1.1.2",

@@ -15,6 +15,9 @@ describe("site audit", () => {
     expect(report.score).toBe(100);
     expect(report.project.astroDetected).toBe(true);
     expect(report.project.trailingSlash).toBe("always");
+    expect(report.pages.find((page) => page.path === "/about/")?.source).toBe(
+      "src/pages/about.astro",
+    );
     expect(report.pages.find((page) => page.file === "404.html")).toMatchObject({
       kind: "not-found",
       indexable: false,

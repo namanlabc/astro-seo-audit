@@ -1,7 +1,10 @@
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { audit, VERSION } from "../audit.js";
+import { writeBaseline } from "../baseline.js";
+import { renderHtml } from "../reporters/html.js";
 import { renderJson } from "../reporters/json.js";
+import { renderSarif } from "../reporters/sarif.js";
 import { renderTerminal } from "../reporters/terminal.js";
 import { severityAtOrAbove } from "../rules/helpers.js";
 import type { Severity } from "../types/index.js";
@@ -42,14 +45,26 @@ export async function runCli(
       cwd: io.cwd,
       dir: options.dir,
       page: options.page,
+      baseline: options.baseline,
       config: options.failOn ? { failOn: options.failOn } : undefined,
     });
+    if (options.writeBaseline) {
+      const target = await writeBaseline(report, io.cwd, options.writeBaseline);
+      io.stdout(`SEO baseline written to ${path.relative(io.cwd, target) || target}\n`);
+      return 0;
+    }
     const output =
       options.format === "json"
         ? renderJson(report)
-        : renderTerminal(report, { color, quiet: options.quiet });
+        : options.format === "html"
+          ? renderHtml(report)
+          : options.format === "sarif"
+            ? renderSarif(report)
+            : renderTerminal(report, { color, quiet: options.quiet });
     if (options.output) {
-      await writeFile(path.resolve(io.cwd, options.output), renderJson(report), "utf8");
+      const target = path.resolve(io.cwd, options.output);
+      await mkdir(path.dirname(target), { recursive: true });
+      await writeFile(target, output, "utf8");
       if (!options.quiet) io.stdout(`SEO report written to ${options.output}\n`);
     } else {
       io.stdout(output);
@@ -58,7 +73,7 @@ export async function runCli(
     const effectiveThreshold = options.failOn ?? report.failOn;
     if (
       effectiveThreshold !== "none" &&
-      hasQualifyingFinding(report.findings, effectiveThreshold)
+      hasQualifyingFinding(report.baseline?.newFindings ?? report.findings, effectiveThreshold)
     ) {
       return 1;
     }

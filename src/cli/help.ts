@@ -8,8 +8,10 @@ Usage:
 Options:
   --dir <path>          Audit a specific build directory (default: detected outDir or dist)
   --page <route>        Audit one generated page without running site-wide checks
-  --format <format>     Output format: terminal or json (default: terminal)
-  --output <file>       Write structured JSON to a file
+  --format <format>     Output format: terminal, json, html, or sarif
+  --output <file>       Write a report; .html selects the HTML format automatically
+  --baseline <file>     Report and fail only on findings not present in the baseline
+  --write-baseline <file>  Save current findings as an adoption baseline
   --fail-on <severity>  Exit non-zero for: error, warning, info, or none
   --no-color            Disable ANSI colors
   --quiet, -q           Print only the summary
@@ -21,5 +23,8 @@ Examples:
   astro-seo-audit ./dist
   astro-seo-audit --page /blog/new-post/
   astro-seo-audit --format json
+  astro-seo-audit --output seo-report.html
+  astro-seo-audit --write-baseline .astro-seo-audit-baseline.json
+  astro-seo-audit --baseline .astro-seo-audit-baseline.json --fail-on warning
   astro-seo-audit --output seo-report.json --fail-on error
 `;

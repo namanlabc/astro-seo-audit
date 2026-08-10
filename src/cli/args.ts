@@ -1,10 +1,12 @@
-import type { Severity } from "../types/index.js";
+import type { ReportFormat, Severity } from "../types/index.js";
 
 export interface CliOptions {
   dir?: string;
   page?: string;
-  format: "terminal" | "json";
+  format: ReportFormat;
   output?: string;
+  baseline?: string;
+  writeBaseline?: string;
   color: boolean;
   failOn?: Severity | "none";
   quiet: boolean;
@@ -12,7 +14,15 @@ export interface CliOptions {
   version: boolean;
 }
 
-const valueFlags = new Set(["--dir", "--page", "--format", "--output", "--fail-on"]);
+const valueFlags = new Set([
+  "--dir",
+  "--page",
+  "--format",
+  "--output",
+  "--fail-on",
+  "--baseline",
+  "--write-baseline",
+]);
 
 export function parseArgs(args: string[]): CliOptions {
   const options: CliOptions = {
@@ -37,9 +47,11 @@ export function parseArgs(args: string[]): CliOptions {
       if (rawFlag === "--dir") options.dir = value;
       else if (rawFlag === "--page") options.page = value;
       else if (rawFlag === "--output") options.output = value;
+      else if (rawFlag === "--baseline") options.baseline = value;
+      else if (rawFlag === "--write-baseline") options.writeBaseline = value;
       else if (rawFlag === "--format") {
-        if (value !== "terminal" && value !== "json") {
-          throw new Error("--format must be terminal or json.");
+        if (value !== "terminal" && value !== "json" && value !== "html" && value !== "sarif") {
+          throw new Error("--format must be terminal, json, html, or sarif.");
         }
         options.format = value;
       } else if (rawFlag === "--fail-on") {
@@ -60,7 +72,16 @@ export function parseArgs(args: string[]): CliOptions {
     if (options.dir) throw new Error("Use either a positional directory or --dir, not both.");
     options.dir = positionals[0];
   }
-  if (options.output && options.format === "terminal") options.format = "json";
+  if (options.baseline && options.writeBaseline) {
+    throw new Error("Use either --baseline or --write-baseline, not both.");
+  }
+  if (options.output && options.format === "terminal") {
+    options.format = options.output.toLowerCase().endsWith(".html")
+      ? "html"
+      : options.output.toLowerCase().endsWith(".sarif")
+        ? "sarif"
+        : "json";
+  }
   return options;
 }
 

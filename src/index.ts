@@ -1,7 +1,12 @@
 export { audit, VERSION } from "./audit.js";
+export { findingFingerprint, writeBaseline } from "./baseline.js";
 export { calculateScore } from "./scoring/calculate.js";
+export { renderHtml } from "./reporters/html.js";
 export { renderJson } from "./reporters/json.js";
+export { renderSarif } from "./reporters/sarif.js";
 export { renderTerminal } from "./reporters/terminal.js";
 export { pageRules } from "./rules/page/index.js";
 export { siteRules } from "./rules/site/index.js";
+export { default } from "./integration.js";
+export type { AstroSeoAuditOptions } from "./integration.js";
 export type * from "./types/index.js";

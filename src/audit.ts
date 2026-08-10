@@ -1,12 +1,14 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
 import { discoverProject } from "./astro/discovery.js";
+import { discoverSourceHints, normalizeSourceHintRoute } from "./astro/source-hints.js";
 import { mergeConfig } from "./config/defaults.js";
 import { loadUserConfig } from "./config/load.js";
 import { discoverPage, discoverPages } from "./crawler/discover.js";
 import { pageRules } from "./rules/page/index.js";
 import { siteRules } from "./rules/site/index.js";
 import { calculateScore } from "./scoring/calculate.js";
+import { compareWithBaseline } from "./baseline.js";
 import type {
   AuditContext,
   AuditOptions,
@@ -15,7 +17,7 @@ import type {
   PageResult,
 } from "./types/index.js";
 
-export const VERSION = "0.2.0";
+export const VERSION = "0.3.0";
 
 export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
   const cwd = path.resolve(options.cwd ?? process.cwd());
@@ -47,6 +49,9 @@ export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
   }
 
   const context: AuditContext = { pages, config, buildDir };
+  const sourceHints = discovered.astroDetected
+    ? await discoverSourceHints(discovered.projectRoot)
+    : new Map<string, string>();
   const pageResults: PageResult[] = [];
   let pageChecksRun = 0;
   let passedChecks = 0;
@@ -69,6 +74,7 @@ export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
       path: page.route,
       url: page.url,
       file: page.relativeFilePath,
+      source: sourceHints.get(normalizeSourceHintRoute(page.route)),
       kind: page.kind,
       indexable: page.indexable,
       findings,
@@ -102,7 +108,7 @@ export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
   };
   const scored = calculateScore(findings);
 
-  return {
+  const report: AuditReport = {
     version: VERSION,
     generatedAt: new Date().toISOString(),
     mode,
@@ -123,6 +129,10 @@ export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
     sitePassedRules,
     findings,
   };
+  if (options.baseline) {
+    report.baseline = await compareWithBaseline(report, cwd, options.baseline);
+  }
+  return report;
 }
 
 async function assertDirectory(directory: string): Promise<void> {

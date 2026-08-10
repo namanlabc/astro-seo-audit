@@ -36,9 +36,13 @@ Source-code SEO linters only see one implementation. Astro sites can generate me
 Astro SEO Audit combines:
 
 - final-output HTML inspection;
+- automatic auditing after `astro build` through a native Astro integration;
 - site-wide crawling and internal-link graph analysis;
 - conservative, rationale-backed SEO rules;
-- terminal and JSON reports; and
+- explainable 0–100 scoring and fast page-only audits;
+- terminal, JSON, standalone HTML, and SARIF reports;
+- adoption baselines that block only newly introduced regressions;
+- likely `src/pages` source-file hints for static routes; and
 - deterministic CI quality gates.
 
 It runs locally. There is no telemetry, analytics, content upload, or AI API.
@@ -62,6 +66,34 @@ Build your Astro project, then run the audit:
 npm run build
 npx astro-seo-audit
 ```
+
+## Automatic Astro integration
+
+Run the audit automatically at the end of every Astro build:
+
+```js
+// astro.config.mjs
+import { defineConfig } from "astro/config";
+import seoAudit from "astro-seo-audit";
+
+export default defineConfig({
+  site: "https://example.com",
+  integrations: [seoAudit()],
+});
+```
+
+The integration audits Astro's resolved output directory, including custom `outDir` settings. It adds no client-side JavaScript and does not affect the generated site.
+
+Use it as a production quality gate and write a visual report:
+
+```js
+seoAudit({
+  failOn: "error",
+  output: "reports/astro-seo-audit.html",
+});
+```
+
+Set `SKIP_ASTRO_SEO_AUDIT=1` for a build that intentionally needs to skip the audit. The CLI remains available for ad-hoc, single-page, and CI usage.
 
 Astro SEO Audit detects a common Astro configuration, including literal `site`, `trailingSlash`, and `outDir` values. Astro config files are read statically and are never imported or executed.
 
@@ -94,8 +126,10 @@ astro-seo-audit [directory] [options]
 
 --dir <path>          Audit a specific build directory
 --page <route>        Audit one generated page and skip site-wide checks
---format <format>     terminal or json
---output <file>       Write a structured JSON report
+--format <format>     terminal, json, or html
+--output <file>       Write a report; .html selects HTML automatically
+--baseline <file>     Report and fail only on findings absent from a baseline
+--write-baseline <file>  Save current findings as an adoption baseline
 --fail-on <severity>  error, warning, info, or none
 --no-color            Disable ANSI colors
 --quiet, -q           Print only the summary
@@ -137,6 +171,24 @@ Threshold behavior is inclusive:
 
 Exit code `1` means the configured quality gate failed. Exit code `2` means the audit could not run, such as a missing build directory or invalid option.
 
+### Adopt it without fixing everything first
+
+Create a baseline from the current site:
+
+```bash
+npx astro-seo-audit --write-baseline .astro-seo-audit-baseline.json
+```
+
+Commit that file, then block only newly introduced warnings or errors:
+
+```bash
+npx astro-seo-audit \
+  --baseline .astro-seo-audit-baseline.json \
+  --fail-on warning
+```
+
+The health score continues to describe the complete site. The baseline changes only which findings are displayed and used by the CI quality gate, so existing debt is never mistaken for a healthy score.
+
 ## JSON output
 
 Print JSON:
@@ -155,7 +207,7 @@ The JSON is a machine-readable model rather than terminal text. It includes proj
 
 ```json
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "mode": "site",
   "score": 87,
   "scoreBreakdown": {
@@ -172,6 +224,26 @@ The JSON is a machine-readable model rather than terminal text. It includes proj
   "findings": []
 }
 ```
+
+## HTML report
+
+Generate a standalone report that can be opened locally or uploaded as a CI artifact:
+
+```bash
+npx astro-seo-audit --output astro-seo-report.html
+```
+
+The responsive report includes the health score, severity totals, actionable findings, evidence, help text, and a page-by-page summary. It has no remote assets or scripts and does not upload site content.
+
+## GitHub annotations with SARIF
+
+Generate a SARIF 2.1 report for GitHub Code Scanning and other compatible CI systems:
+
+```bash
+npx astro-seo-audit --output astro-seo-audit.sarif
+```
+
+Static routes are linked to their likely `src/pages` source file when one can be determined safely. Dynamic and generated routes fall back to their built HTML file rather than guessing.
 
 ## Built-in checks
 
@@ -225,7 +297,7 @@ Zero configuration works for typical static Astro builds. Optional settings can 
 
 The same object may be placed under the `astro-seo-audit` key in `package.json`. A standalone JSON file takes precedence. CLI options override file configuration.
 
-JSON is intentional in v0.1: loading JavaScript or TypeScript configuration would execute project code. Static Astro discovery also recognizes only common literal values. Pass `--dir` or set JSON configuration when a computed Astro setting cannot be inferred safely.
+JSON configuration is intentional: loading JavaScript or TypeScript configuration would execute project code. Static Astro discovery also recognizes only common literal values. Pass `--dir` or set JSON configuration when a computed Astro setting cannot be inferred safely.
 
 Route patterns support `*` within one path segment and `**` across segments.
 
@@ -268,13 +340,13 @@ Built-in `pageRules` and `siteRules` are exported for inspection and future comp
 ## Architecture
 
 ```text
-Astro project discovery
+Astro integration or CLI
         ↓
-Generated HTML crawler → normalized page model → page rules
-                                      ↓
-                             link/site model → site rules
-                                      ↓
-                          scoring → terminal / JSON
+Astro project discovery → generated HTML crawler → normalized page model → page rules
+                                                              ↓
+                                                     link/site model → site rules
+                                                              ↓
+                                  scoring → terminal / JSON / HTML → baseline gate
 ```
 
 The core audits generated files. It does not require `astro-seo`, a particular layout, Content Collections, or any head component.

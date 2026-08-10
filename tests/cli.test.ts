@@ -30,7 +30,7 @@ describe("CLI", () => {
       mode: "site",
       score: 100,
       pagesScanned: 4,
-      version: "0.2.0",
+      version: "0.3.0",
     });
     expect(report.pages).toBeInstanceOf(Array);
     expect(report.siteFindings).toBeInstanceOf(Array);
@@ -45,7 +45,7 @@ describe("CLI", () => {
       requestedPage: "/about/",
       score: 100,
       pagesScanned: 1,
-      version: "0.2.0",
+      version: "0.3.0",
       siteFindings: [],
       sitePassedRules: [],
     });
@@ -81,5 +81,16 @@ describe("CLI", () => {
     expect(await runCli(["--help"], output.adapter)).toBe(0);
     expect(output.stdout.join("")).toContain("--fail-on");
     expect(output.stdout.join("")).toContain("--page");
+    expect(output.stdout.join("")).toContain("--baseline");
+  });
+
+  it("writes an HTML report based on the output extension", async () => {
+    const output = io(path.join(fixtures, "healthy"));
+    const target = path.join(
+      await import("node:os").then((module) => module.tmpdir()),
+      "astro-seo-audit-test.html",
+    );
+    expect(await runCli(["--output", target], output.adapter)).toBe(0);
+    expect(output.stdout.join("")).toContain("SEO report written");
   });
 });

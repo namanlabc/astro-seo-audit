@@ -117,6 +117,7 @@ export interface PageResult {
   path: string;
   url?: string | undefined;
   file: string;
+  source?: string | undefined;
   kind: PageKind;
   indexable: boolean;
   findings: Finding[];
@@ -164,6 +165,7 @@ export interface AuditReport {
   siteFindings: Finding[];
   sitePassedRules: string[];
   findings: Finding[];
+  baseline?: BaselineComparison | undefined;
 }
 
 export interface AuditOptions {
@@ -171,4 +173,13 @@ export interface AuditOptions {
   dir?: string | undefined;
   page?: string | undefined;
   config?: Partial<AuditConfig> | undefined;
+  baseline?: string | undefined;
 }
+
+export interface BaselineComparison {
+  path: string;
+  knownFindings: number;
+  newFindings: Finding[];
+}
+
+export type ReportFormat = "terminal" | "json" | "html" | "sarif";

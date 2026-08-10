@@ -33,6 +33,12 @@ export function renderTerminal(report: AuditReport, options: TerminalReporterOpt
   lines.push(`${severity("warning", "⚠ Warnings")}     ${report.summary.warnings}`);
   lines.push(`${severity("info", "ⓘ Notices")}      ${report.summary.info}`);
   lines.push(`${color(pc.green, "✓ Checks passed")} ${report.summary.passedChecks}`);
+  if (report.baseline) {
+    lines.push("");
+    lines.push(
+      `${report.baseline.newFindings.length} new finding${report.baseline.newFindings.length === 1 ? "" : "s"}; ${report.baseline.knownFindings} known finding${report.baseline.knownFindings === 1 ? "" : "s"} suppressed by baseline`,
+    );
+  }
 
   if (options.quiet) {
     lines.push("");
@@ -40,7 +46,7 @@ export function renderTerminal(report: AuditReport, options: TerminalReporterOpt
     return `${lines.join("\n")}\n`;
   }
 
-  const sorted = [...report.findings].sort(compareFindings);
+  const sorted = [...(report.baseline?.newFindings ?? report.findings)].sort(compareFindings);
   const maxIssues = options.maxIssues ?? 12;
   lines.push("");
   lines.push(heading("Top issues"));
@@ -96,6 +102,7 @@ export function renderTerminal(report: AuditReport, options: TerminalReporterOpt
     lines.push("");
     for (const page of displayedPages.slice(0, maxPages)) {
       lines.push(heading(page.path));
+      if (page.source) lines.push(`  ${dim(`Likely source: ${page.source}`)}`);
       const grouped = countBySeverity(page.findings);
       lines.push(
         `  ${severity("error", `✕ ${grouped.error}`)}  ${severity("warning", `⚠ ${grouped.warning}`)}  ${severity("info", `ⓘ ${grouped.info}`)}  ${color(pc.green, `✓ ${page.passedRules.length}`)}`,
