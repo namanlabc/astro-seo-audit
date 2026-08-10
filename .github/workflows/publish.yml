@@ -11,6 +11,7 @@ permissions:
 jobs:
   publish:
     name: Test and publish
+    if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
 
     steps:
