@@ -26,9 +26,42 @@ describe("CLI", () => {
     const output = io(path.join(fixtures, "healthy"));
     expect(await runCli(["--format", "json"], output.adapter)).toBe(0);
     const report = JSON.parse(output.stdout.join("")) as Record<string, unknown>;
-    expect(report).toMatchObject({ score: 100, pagesScanned: 4, version: "0.1.2" });
+    expect(report).toMatchObject({
+      mode: "site",
+      score: 100,
+      pagesScanned: 4,
+      version: "0.2.0",
+    });
     expect(report.pages).toBeInstanceOf(Array);
     expect(report.siteFindings).toBeInstanceOf(Array);
+  });
+
+  it("prints a structured page-only JSON report", async () => {
+    const output = io(path.join(fixtures, "healthy"));
+    expect(await runCli(["--page", "/about/", "--format", "json"], output.adapter)).toBe(0);
+    const report = JSON.parse(output.stdout.join("")) as Record<string, unknown>;
+    expect(report).toMatchObject({
+      mode: "page",
+      requestedPage: "/about/",
+      score: 100,
+      pagesScanned: 1,
+      version: "0.2.0",
+      siteFindings: [],
+      sitePassedRules: [],
+    });
+  });
+
+  it("explains that site-wide checks are skipped in page mode", async () => {
+    const output = io(path.join(fixtures, "healthy"));
+    expect(await runCli(["--page", "/about/", "--no-color"], output.adapter)).toBe(0);
+    expect(output.stdout.join("")).toContain("Page-only audit. Site-wide checks were skipped.");
+    expect(output.stdout.join("")).toContain("Page result");
+  });
+
+  it("returns a usage error when the generated page does not exist", async () => {
+    const output = io(path.join(fixtures, "healthy"));
+    expect(await runCli(["--page", "/missing/"], output.adapter)).toBe(2);
+    expect(output.stderr.join("")).toContain("Generated page not found for /missing/");
   });
 
   it("returns non-zero when the fail threshold is met", async () => {
@@ -47,5 +80,6 @@ describe("CLI", () => {
     const output = io("/does/not/exist");
     expect(await runCli(["--help"], output.adapter)).toBe(0);
     expect(output.stdout.join("")).toContain("--fail-on");
+    expect(output.stdout.join("")).toContain("--page");
   });
 });

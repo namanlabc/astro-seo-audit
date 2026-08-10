@@ -24,6 +24,9 @@ export function renderTerminal(report: AuditReport, options: TerminalReporterOpt
   lines.push(dim("─".repeat(48)));
   lines.push("");
   lines.push(`${report.pagesScanned} page${report.pagesScanned === 1 ? "" : "s"} scanned`);
+  if (report.mode === "page") {
+    lines.push(dim("Page-only audit. Site-wide checks were skipped."));
+  }
   lines.push(`Astro SEO Audit health score: ${scoreText(report.score, enabled)}/100`);
   lines.push("");
   lines.push(`${severity("error", "✕ Errors")}       ${report.summary.errors}`);
@@ -56,39 +59,42 @@ export function renderTerminal(report: AuditReport, options: TerminalReporterOpt
     }
   }
 
-  lines.push("");
-  lines.push(heading("Site-wide"));
-  lines.push("");
-  lines.push(
-    siteStatus(report, "sitemap.missing", "Sitemap detected", "No sitemap detected", enabled),
-  );
-  lines.push(
-    siteStatus(
-      report,
-      "robots-txt.missing",
-      "robots.txt detected",
-      "No robots.txt detected",
-      enabled,
-    ),
-  );
-  const orphanCount = report.siteFindings.filter(
-    (finding) => finding.ruleId === "links.orphan-page",
-  ).length;
-  lines.push(
-    orphanCount
-      ? `${enabled ? pc.yellow("⚠") : "⚠"} ${orphanCount} orphan page${orphanCount === 1 ? "" : "s"}`
-      : report.sitePassedRules.includes("links.orphan-page")
-        ? `${enabled ? pc.green("✓") : "✓"} No orphan pages`
-        : `${enabled ? pc.dim("–") : "–"} Orphan check disabled`,
-  );
+  if (report.mode === "site") {
+    lines.push("");
+    lines.push(heading("Site-wide"));
+    lines.push("");
+    lines.push(
+      siteStatus(report, "sitemap.missing", "Sitemap detected", "No sitemap detected", enabled),
+    );
+    lines.push(
+      siteStatus(
+        report,
+        "robots-txt.missing",
+        "robots.txt detected",
+        "No robots.txt detected",
+        enabled,
+      ),
+    );
+    const orphanCount = report.siteFindings.filter(
+      (finding) => finding.ruleId === "links.orphan-page",
+    ).length;
+    lines.push(
+      orphanCount
+        ? `${enabled ? pc.yellow("⚠") : "⚠"} ${orphanCount} orphan page${orphanCount === 1 ? "" : "s"}`
+        : report.sitePassedRules.includes("links.orphan-page")
+          ? `${enabled ? pc.green("✓") : "✓"} No orphan pages`
+          : `${enabled ? pc.dim("–") : "–"} Orphan check disabled`,
+    );
+  }
 
   const affectedPages = report.pages.filter((page) => page.findings.length > 0);
-  if (affectedPages.length) {
+  const displayedPages = report.mode === "page" ? report.pages : affectedPages;
+  if (displayedPages.length) {
     const maxPages = options.maxPages ?? 20;
     lines.push("");
-    lines.push(heading("Pages with findings"));
+    lines.push(heading(report.mode === "page" ? "Page result" : "Pages with findings"));
     lines.push("");
-    for (const page of affectedPages.slice(0, maxPages)) {
+    for (const page of displayedPages.slice(0, maxPages)) {
       lines.push(heading(page.path));
       const grouped = countBySeverity(page.findings);
       lines.push(
@@ -102,9 +108,9 @@ export function renderTerminal(report: AuditReport, options: TerminalReporterOpt
       }
       lines.push("");
     }
-    if (affectedPages.length > maxPages) {
+    if (displayedPages.length > maxPages) {
       lines.push(
-        dim(`… ${affectedPages.length - maxPages} more affected pages available in JSON output.`),
+        dim(`… ${displayedPages.length - maxPages} more affected pages available in JSON output.`),
       );
       lines.push("");
     }

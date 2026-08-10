@@ -3,7 +3,7 @@ import path from "node:path";
 import { discoverProject } from "./astro/discovery.js";
 import { mergeConfig } from "./config/defaults.js";
 import { loadUserConfig } from "./config/load.js";
-import { discoverPages } from "./crawler/discover.js";
+import { discoverPage, discoverPages } from "./crawler/discover.js";
 import { pageRules } from "./rules/page/index.js";
 import { siteRules } from "./rules/site/index.js";
 import { calculateScore } from "./scoring/calculate.js";
@@ -15,7 +15,7 @@ import type {
   PageResult,
 } from "./types/index.js";
 
-export const VERSION = "0.1.2";
+export const VERSION = "0.2.0";
 
 export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
   const cwd = path.resolve(options.cwd ?? process.cwd());
@@ -36,7 +36,10 @@ export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
   const config = { ...merged, buildDir };
 
   await assertDirectory(buildDir);
-  const pages = await discoverPages(buildDir, config);
+  const mode = options.page ? "page" : "site";
+  const pages = options.page
+    ? [await discoverPage(buildDir, config, options.page)]
+    : await discoverPages(buildDir, config);
   if (pages.length === 0) {
     throw new Error(
       `No generated HTML files were found in ${buildDir}. Build the Astro site first.`,
@@ -77,14 +80,16 @@ export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
   const siteFindings: Finding[] = [];
   const sitePassedRules: string[] = [];
   let siteChecksRun = 0;
-  for (const rule of siteRules) {
-    if (config.ignoredRules.includes(rule.meta.id)) continue;
-    siteChecksRun += 1;
-    const result = await rule.evaluate(context);
-    if (result.length === 0) {
-      passedChecks += 1;
-      sitePassedRules.push(rule.meta.id);
-    } else siteFindings.push(...result);
+  if (mode === "site") {
+    for (const rule of siteRules) {
+      if (config.ignoredRules.includes(rule.meta.id)) continue;
+      siteChecksRun += 1;
+      const result = await rule.evaluate(context);
+      if (result.length === 0) {
+        passedChecks += 1;
+        sitePassedRules.push(rule.meta.id);
+      } else siteFindings.push(...result);
+    }
   }
 
   const findings = [...pageResults.flatMap((page) => page.findings), ...siteFindings];
@@ -100,6 +105,8 @@ export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
   return {
     version: VERSION,
     generatedAt: new Date().toISOString(),
+    mode,
+    requestedPage: options.page,
     project: {
       ...discovered,
       buildDir,
