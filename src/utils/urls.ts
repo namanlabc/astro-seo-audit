@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { AuditConfig } from "../types/index.js";
+import type { AuditConfig, PageKind } from "../types/index.js";
 
 const assetExtensions = new Set([
   ".avif",
@@ -31,6 +31,11 @@ export function htmlFileToRoute(relativeFilePath: string): string {
   if (normalized === "index.html") return "/";
   if (normalized.endsWith("/index.html")) return `/${normalized.slice(0, -"index.html".length)}`;
   return `/${normalized}`;
+}
+
+export function htmlFileKind(relativeFilePath: string): PageKind {
+  const normalized = relativeFilePath.split(path.sep).join("/");
+  return /(?:^|\/)404(?:\/index)?\.html$/i.test(normalized) ? "not-found" : "page";
 }
 
 export function routeWithPolicy(

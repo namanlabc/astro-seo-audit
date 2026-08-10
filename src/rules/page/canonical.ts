@@ -121,7 +121,7 @@ export const canonicalRules: PageRule[] = [
       scope: "page",
     },
     evaluate(page, context) {
-      if (!page.url || page.canonicals.length !== 1) return [];
+      if (!page.indexable || !page.url || page.canonicals.length !== 1) return [];
       const pageUrl = normalizeComparableUrl(page.url);
       const canonical = normalizeComparableUrl(page.canonicals[0] ?? "");
       if (!pageUrl || !canonical) return [];

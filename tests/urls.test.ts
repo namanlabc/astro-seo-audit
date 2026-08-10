@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  htmlFileKind,
   htmlFileToRoute,
   resolveLink,
   routeCandidates,
@@ -13,6 +14,16 @@ describe("URL normalization", () => {
     ["nested/page.html", "/nested/page.html"],
   ])("maps %s to %s", (file, expected) => {
     expect(htmlFileToRoute(file)).toBe(expected);
+  });
+
+  it.each([
+    ["404.html", "not-found"],
+    ["404/index.html", "not-found"],
+    ["en/404.html", "not-found"],
+    ["articles/404-things.html", "page"],
+    ["index.html", "page"],
+  ] as const)("classifies %s as %s", (file, expected) => {
+    expect(htmlFileKind(file)).toBe(expected);
   });
 
   it("applies trailing slash policy without rewriting html files", () => {

@@ -1,6 +1,6 @@
 {
   "name": "astro-seo-audit",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Catch SEO problems in Astro before you deploy.",
   "type": "module",
   "license": "MIT",

@@ -15,7 +15,7 @@ import type {
   PageResult,
 } from "./types/index.js";
 
-export const VERSION = "0.1.1";
+export const VERSION = "0.1.2";
 
 export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
   const cwd = path.resolve(options.cwd ?? process.cwd());
@@ -66,6 +66,7 @@ export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
       path: page.route,
       url: page.url,
       file: page.relativeFilePath,
+      kind: page.kind,
       indexable: page.indexable,
       findings,
       passedRules,
