@@ -1,0 +1,51 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
+import { runCli } from "../src/cli/run.js";
+
+const fixtures = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
+
+function io(cwd: string) {
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  return {
+    stdout,
+    stderr,
+    adapter: {
+      stdout: (value: string) => stdout.push(value),
+      stderr: (value: string) => stderr.push(value),
+      cwd,
+      env: {},
+      isTTY: false,
+    },
+  };
+}
+
+describe("CLI", () => {
+  it("prints structured JSON", async () => {
+    const output = io(path.join(fixtures, "healthy"));
+    expect(await runCli(["--format", "json"], output.adapter)).toBe(0);
+    const report = JSON.parse(output.stdout.join("")) as Record<string, unknown>;
+    expect(report).toMatchObject({ score: 100, pagesScanned: 3 });
+    expect(report.pages).toBeInstanceOf(Array);
+    expect(report.siteFindings).toBeInstanceOf(Array);
+  });
+
+  it("returns non-zero when the fail threshold is met", async () => {
+    const output = io(path.join(fixtures, "problematic"));
+    expect(await runCli(["--quiet", "--fail-on", "error"], output.adapter)).toBe(1);
+    expect(output.stdout.join("")).toContain("Completed with");
+  });
+
+  it("returns a usage error for an unknown flag", async () => {
+    const output = io(path.join(fixtures, "healthy"));
+    expect(await runCli(["--wat"], output.adapter)).toBe(2);
+    expect(output.stderr.join("")).toContain("Unknown option");
+  });
+
+  it("prints help without auditing", async () => {
+    const output = io("/does/not/exist");
+    expect(await runCli(["--help"], output.adapter)).toBe(0);
+    expect(output.stdout.join("")).toContain("--fail-on");
+  });
+});

@@ -1,0 +1,11 @@
+{
+  "site": "https://example.com",
+  "buildDir": "dist",
+  "trailingSlash": "always",
+  "ignoreRoutes": ["/404.html", "/drafts/**"],
+  "orphanExclusions": ["/campaign/**"],
+  "severityOverrides": {
+    "description.missing": "info"
+  },
+  "failOn": "error"
+}

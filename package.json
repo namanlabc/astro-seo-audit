@@ -1,0 +1,64 @@
+{
+  "name": "astro-seo-audit",
+  "version": "0.1.1",
+  "description": "Catch SEO problems in Astro before you deploy.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Naman Patel",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/namanlabc/astro-seo-audit.git"
+  },
+  "homepage": "https://github.com/namanlabc/astro-seo-audit#readme",
+  "bugs": {
+    "url": "https://github.com/namanlabc/astro-seo-audit/issues"
+  },
+  "keywords": [
+    "astro",
+    "seo",
+    "audit",
+    "cli",
+    "static-site",
+    "technical-seo"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "astro-seo-audit": "dist/cli/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsup",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run format:check && npm run lint && npm test && npm run build"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "fast-glob": "^3.3.3",
+    "fast-xml-parser": "^5.2.5",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "prettier": "^3.6.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
