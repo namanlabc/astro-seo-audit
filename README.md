@@ -1,7 +1,6 @@
 # Astro SEO Audit
 
 [![npm version](https://img.shields.io/npm/v/astro-seo-audit.svg)](https://www.npmjs.com/package/astro-seo-audit)
-[![weekly downloads](https://img.shields.io/npm/dw/astro-seo-audit.svg)](https://www.npmjs.com/package/astro-seo-audit)
 [![CI](https://github.com/namanlabc/astro-seo-audit/actions/workflows/ci.yml/badge.svg)](https://github.com/namanlabc/astro-seo-audit/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/astro-seo-audit.svg)](LICENSE)
 
