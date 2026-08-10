@@ -1,12 +1,19 @@
 # Astro SEO Audit
 
-**Catch SEO problems in Astro before you deploy.**
+[![npm version](https://img.shields.io/npm/v/astro-seo-audit.svg)](https://www.npmjs.com/package/astro-seo-audit)
+[![weekly downloads](https://img.shields.io/npm/dw/astro-seo-audit.svg)](https://www.npmjs.com/package/astro-seo-audit)
+[![CI](https://github.com/namanlabc/astro-seo-audit/actions/workflows/ci.yml/badge.svg)](https://github.com/namanlabc/astro-seo-audit/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/astro-seo-audit.svg)](LICENSE)
+
+**SEO checks that fit the way Astro ships.**
 
 > **Independent project:** Astro SEO Audit is not affiliated with, endorsed by, or an official project of Astro or its maintainers.
 
-Astro SEO Audit scans the HTML your Astro site actually generates and detects technical and on-page SEO issues across your whole site.
+Astro SEO Audit inspects the HTML your Astro site actually generates, gives it an explainable 0–100 health score, and catches technical and on-page SEO problems before they reach production.
 
-It does not replace your SEO components, layouts, Content Collections, MDX, or schema helpers. Use whatever SEO implementation you prefer; Astro SEO Audit inspects what gets shipped to search engines.
+Audit the whole site before a deploy or check one new page while you are writing it. Add a baseline to block only new regressions, then send the results to your terminal, an HTML report, JSON, or GitHub Code Scanning through SARIF.
+
+**Nothing to host. No browser. No native binary. No telemetry.**
 
 ```text
 Astro SEO Audit
@@ -29,11 +36,19 @@ Top issues
   Indexable page has no canonical link.
 ```
 
-## Why this exists
+## Why use it
 
-Source-code SEO linters only see one implementation. Astro sites can generate metadata through layouts, integrations, Markdown, MDX, content loaders, or plain HTML. The final document is the shared truth.
+Astro sites can generate metadata through layouts, integrations, Markdown, MDX, content loaders, or plain HTML. Source-code checks see only one implementation; Astro SEO Audit checks the final document delivered to search engines.
 
-Astro SEO Audit combines:
+| Need                                | What Astro SEO Audit does                                                |
+| ----------------------------------- | ------------------------------------------------------------------------ |
+| Check a site before deployment      | Audits every generated page and the internal-link graph after the build  |
+| Check only a new or updated page    | Runs a fast route-level audit with its own 0–100 score                   |
+| Adopt checks on an established site | Baselines existing findings and fails only on newly introduced problems  |
+| Understand what changed             | Explains every finding, penalty, severity, and likely static source file |
+| Use results outside the terminal    | Produces JSON, standalone HTML, and SARIF 2.1 reports                    |
+
+Under the hood, it combines:
 
 - final-output HTML inspection;
 - automatic auditing after `astro build` through a native Astro integration;
@@ -42,7 +57,7 @@ Astro SEO Audit combines:
 - explainable 0–100 scoring and fast page-only audits;
 - terminal, JSON, standalone HTML, and SARIF reports;
 - adoption baselines that block only newly introduced regressions;
-- likely `src/pages` source-file hints for static routes; and
+- likely `src/pages` source-file hints for static routes;
 - deterministic CI quality gates.
 
 It runs locally. There is no telemetry, analytics, content upload, or AI API.
@@ -54,20 +69,19 @@ It runs locally. There is no telemetry, analytics, content upload, or AI API.
 
 ## Installation
 
+Let Astro install the package and update your configuration:
+
+```bash
+npx astro add astro-seo-audit
+```
+
+Or install it manually:
+
 ```bash
 npm install --save-dev astro-seo-audit
 ```
 
-## Quick start
-
-Build your Astro project, then run the audit:
-
-```bash
-npm run build
-npx astro-seo-audit
-```
-
-## Automatic Astro integration
+## Quick start: audit every build
 
 Run the audit automatically at the end of every Astro build:
 
@@ -83,6 +97,13 @@ export default defineConfig({
 ```
 
 The integration audits Astro's resolved output directory, including custom `outDir` settings. It adds no client-side JavaScript and does not affect the generated site.
+
+Prefer an on-demand audit? Build the site and run the CLI without changing `astro.config.mjs`:
+
+```bash
+npm run build
+npx astro-seo-audit
+```
 
 Use it as a production quality gate and write a visual report:
 
@@ -207,7 +228,7 @@ The JSON is a machine-readable model rather than terminal text. It includes proj
 
 ```json
 {
-  "version": "0.3.0",
+  "version": "0.3.1",
   "mode": "site",
   "score": 87,
   "scoreBreakdown": {
@@ -364,7 +385,7 @@ The core audits generated files. It does not require `astro-seo`, a particular l
 
 ## Roadmap
 
-Potential future work includes a custom rule API, safe `--fix` operations, SARIF and GitHub annotations, historical comparisons, richer schema and hreflang validation, redirect analysis, external-link checking, and framework adapters. These are not placeholder features in v0.1.
+Potential future work includes a custom rule API, safe `--fix` operations, richer schema and hreflang validation, redirect analysis, external-link checking, and framework adapters.
 
 ## Contributing
 
@@ -372,4 +393,4 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md), especially th
 
 ## License
 
-[MIT](LICENSE). Astro SEO Audit is an independent community project and is not an official Astro or Yoast package.
+[MIT](LICENSE). Astro SEO Audit is an independent community project and is not an official Astro package.

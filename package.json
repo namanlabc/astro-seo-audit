@@ -1,7 +1,7 @@
 {
   "name": "astro-seo-audit",
-  "version": "0.3.0",
-  "description": "Catch SEO problems in Astro before you deploy.",
+  "version": "0.3.1",
+  "description": "Score Astro SEO after every build with whole-site and single-page audits, regression gates, HTML reports, and SARIF.",
   "type": "module",
   "license": "MIT",
   "author": "Naman Patel",
@@ -20,7 +20,11 @@
     "audit",
     "cli",
     "static-site",
-    "technical-seo"
+    "technical-seo",
+    "seo-score",
+    "continuous-integration",
+    "sarif",
+    "html-report"
   ],
   "files": [
     "dist",
