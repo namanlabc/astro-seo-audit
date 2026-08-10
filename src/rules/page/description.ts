@@ -68,6 +68,7 @@ export const descriptionRules: PageRule[] = [
       scope: "page",
     },
     evaluate(page, context) {
+      if (page.kind === "not-found") return [];
       const description = page.descriptions.length === 1 ? page.descriptions[0] : undefined;
       if (!description) return [];
       const { min, max } = context.config.descriptionLength;

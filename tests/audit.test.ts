@@ -22,6 +22,10 @@ describe("site audit", () => {
       kind: "not-found",
       indexable: false,
     });
+    const notFound = report.pages.find((page) => page.file === "404.html");
+    expect(notFound?.findings.map((finding) => finding.ruleId)).not.toEqual(
+      expect.arrayContaining(["title.length", "description.length", "og.image-missing"]),
+    );
   });
 
   it("audits exactly one generated page without site-wide checks", async () => {

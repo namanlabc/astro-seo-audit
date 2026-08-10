@@ -68,6 +68,7 @@ export const titleRules: PageRule[] = [
       scope: "page",
     },
     evaluate(page, context) {
+      if (page.kind === "not-found") return [];
       const title = page.titles.length === 1 ? page.titles[0] : undefined;
       if (!title) return [];
       const { min, max } = context.config.titleLength;
