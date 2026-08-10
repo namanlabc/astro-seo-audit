@@ -73,6 +73,14 @@ npx astro-seo-audit ./dist
 npx astro-seo-audit --dir ./dist
 ```
 
+Audit only a newly generated page:
+
+```bash
+npx astro-seo-audit --page /blog/new-post/
+```
+
+Page mode resolves that route directly to its generated HTML file and reads only that page. It runs every page-level check while skipping site-wide checks that would require crawling the complete build, such as duplicate metadata, broken-link graphs, orphan pages, sitemaps, and robots.txt. This makes it suitable for a fast pre-publish check; keep the default full-site audit in CI for complete coverage.
+
 See every option:
 
 ```bash
@@ -85,6 +93,7 @@ npx astro-seo-audit --help
 astro-seo-audit [directory] [options]
 
 --dir <path>          Audit a specific build directory
+--page <route>        Audit one generated page and skip site-wide checks
 --format <format>     terminal or json
 --output <file>       Write a structured JSON report
 --fail-on <severity>  error, warning, info, or none
@@ -95,6 +104,16 @@ astro-seo-audit [directory] [options]
 ```
 
 `NO_COLOR` is respected automatically. Output is non-interactive and safe for CI logs.
+
+`--page` accepts a generated route or a same-origin absolute URL. Query strings and fragments are ignored when locating the file:
+
+```bash
+npx astro-seo-audit --page /guides/getting-started/
+npx astro-seo-audit --page https://example.com/guides/getting-started/
+npx astro-seo-audit --dir ./custom-output --page /launch/
+```
+
+The site must be built first. Both Astro directory output (`/about/` → `about/index.html`) and file output (`/about.html`) are supported.
 
 ## CI quality gates
 
@@ -136,7 +155,8 @@ The JSON is a machine-readable model rather than terminal text. It includes proj
 
 ```json
 {
-  "version": "0.1.2",
+  "version": "0.2.0",
+  "mode": "site",
   "score": 87,
   "scoreBreakdown": {
     "initial": 100,
@@ -153,7 +173,7 @@ The JSON is a machine-readable model rather than terminal text. It includes proj
 }
 ```
 
-## Checks in v0.1
+## Built-in checks
 
 Each check is an independent rule with an ID, category, default severity, scope, description, help text, and evaluation function.
 
@@ -234,6 +254,15 @@ const report = await audit({ dir: "./dist" });
 console.log(renderJson(report));
 ```
 
+For a fast page-only audit:
+
+```ts
+const report = await audit({
+  dir: "./dist",
+  page: "/blog/new-post/",
+});
+```
+
 Built-in `pageRules` and `siteRules` are exported for inspection and future composition. The engine is not coupled to Astro internals; only project discovery is Astro-specific.
 
 ## Architecture
@@ -252,7 +281,8 @@ The core audits generated files. It does not require `astro-seo`, a particular l
 
 ## Limitations
 
-- v0.1 audits static generated HTML, not server-rendered routes that have no build-time HTML file.
+- The auditor inspects static generated HTML, not server-rendered routes that have no build-time HTML file.
+- Page mode intentionally skips site-wide rules. Duplicate metadata, internal-link graph, orphan, sitemap, and robots.txt checks require a full audit.
 - External links are not requested or validated.
 - Astro config detection is intentionally static and cannot evaluate variables, environment branches, or helper functions.
 - robots.txt support covers safe, high-confidence basics rather than every crawler-specific matching edge case.

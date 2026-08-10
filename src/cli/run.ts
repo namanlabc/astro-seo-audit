@@ -41,6 +41,7 @@ export async function runCli(
     const report = await audit({
       cwd: io.cwd,
       dir: options.dir,
+      page: options.page,
       config: options.failOn ? { failOn: options.failOn } : undefined,
     });
     const output =

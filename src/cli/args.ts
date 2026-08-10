@@ -2,6 +2,7 @@ import type { Severity } from "../types/index.js";
 
 export interface CliOptions {
   dir?: string;
+  page?: string;
   format: "terminal" | "json";
   output?: string;
   color: boolean;
@@ -11,7 +12,7 @@ export interface CliOptions {
   version: boolean;
 }
 
-const valueFlags = new Set(["--dir", "--format", "--output", "--fail-on"]);
+const valueFlags = new Set(["--dir", "--page", "--format", "--output", "--fail-on"]);
 
 export function parseArgs(args: string[]): CliOptions {
   const options: CliOptions = {
@@ -34,6 +35,7 @@ export function parseArgs(args: string[]): CliOptions {
       const value = inlineValue ?? args[++index];
       if (!value || value.startsWith("--")) throw new Error(`${rawFlag} requires a value.`);
       if (rawFlag === "--dir") options.dir = value;
+      else if (rawFlag === "--page") options.page = value;
       else if (rawFlag === "--output") options.output = value;
       else if (rawFlag === "--format") {
         if (value !== "terminal" && value !== "json") {

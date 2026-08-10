@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageTargetFileCandidates } from "../src/crawler/discover.js";
 import {
   htmlFileKind,
   htmlFileToRoute,
@@ -55,5 +56,28 @@ describe("URL normalization", () => {
     expect(routeCandidates("/about/index.html")).toEqual(
       expect.arrayContaining(["/about/", "/about", "/about.html"]),
     );
+  });
+
+  it.each([
+    ["/", ["index.html"]],
+    ["/about/", ["about/index.html", "about.html"]],
+    ["/about", ["about/index.html", "about.html"]],
+    ["/about.html", ["about.html", "about/index.html"]],
+    [
+      "https://example.com/guides/getting-started/?preview=true#intro",
+      ["guides/getting-started/index.html", "guides/getting-started.html"],
+    ],
+  ])("maps page target %s to generated file candidates", (target, expected) => {
+    expect(pageTargetFileCandidates(target, "https://example.com")).toEqual(expected);
+  });
+
+  it("rejects an absolute page URL from a different configured origin", () => {
+    expect(() =>
+      pageTargetFileCandidates("https://other.example/about/", "https://example.com"),
+    ).toThrow("configured site origin");
+  });
+
+  it("rejects malformed page target encoding", () => {
+    expect(() => pageTargetFileCandidates("/%E0%A4%A")).toThrow("malformed URL encoding");
   });
 });

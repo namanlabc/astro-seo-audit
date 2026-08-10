@@ -21,6 +21,37 @@ describe("site audit", () => {
     });
   });
 
+  it("audits exactly one generated page without site-wide checks", async () => {
+    const report = await audit({
+      cwd: path.join(fixtures, "healthy"),
+      page: "/about/",
+    });
+
+    expect(report).toMatchObject({
+      mode: "page",
+      requestedPage: "/about/",
+      pagesScanned: 1,
+      score: 100,
+    });
+    expect(report.pages).toHaveLength(1);
+    expect(report.pages[0]).toMatchObject({
+      path: "/about/",
+      file: "about/index.html",
+    });
+    expect(report.siteFindings).toEqual([]);
+    expect(report.sitePassedRules).toEqual([]);
+  });
+
+  it("accepts a same-origin absolute URL as a page target", async () => {
+    const report = await audit({
+      cwd: path.join(fixtures, "healthy"),
+      page: "https://example.com/guides/getting-started/",
+    });
+
+    expect(report.pages).toHaveLength(1);
+    expect(report.pages[0]?.file).toBe("guides/getting-started/index.html");
+  });
+
   it("finds page-level and site-wide problems from final HTML", async () => {
     const report = await audit({ cwd: path.join(fixtures, "problematic") });
     const ids = report.findings.map((finding) => finding.ruleId);

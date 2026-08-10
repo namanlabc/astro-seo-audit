@@ -1,6 +1,7 @@
 export type Severity = "error" | "warning" | "info";
 export type FindingScope = "page" | "site";
 export type PageKind = "page" | "not-found";
+export type AuditMode = "site" | "page";
 
 export type RuleCategory =
   | "title"
@@ -151,6 +152,8 @@ export interface ProjectInfo {
 export interface AuditReport {
   version: string;
   generatedAt: string;
+  mode: AuditMode;
+  requestedPage?: string | undefined;
   project: ProjectInfo;
   failOn: Severity | "none";
   score: number;
@@ -166,5 +169,6 @@ export interface AuditReport {
 export interface AuditOptions {
   cwd?: string | undefined;
   dir?: string | undefined;
+  page?: string | undefined;
   config?: Partial<AuditConfig> | undefined;
 }
