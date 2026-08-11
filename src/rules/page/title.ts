@@ -13,6 +13,7 @@ export const titleRules: PageRule[] = [
       scope: "page",
     },
     evaluate(page, context) {
+      if (page.kind === "not-found") return [];
       return page.titles.length === 0
         ? [finding(this.meta, context.config, "Page has no <title> element.", page)]
         : [];
@@ -29,6 +30,7 @@ export const titleRules: PageRule[] = [
       scope: "page",
     },
     evaluate(page, context) {
+      if (page.kind === "not-found") return [];
       return page.titles.some((title) => title.length === 0)
         ? [finding(this.meta, context.config, "Page contains an empty <title> element.", page)]
         : [];
@@ -45,6 +47,7 @@ export const titleRules: PageRule[] = [
       scope: "page",
     },
     evaluate(page, context) {
+      if (page.kind === "not-found") return [];
       return page.titles.length > 1
         ? [
             finding(
@@ -52,6 +55,7 @@ export const titleRules: PageRule[] = [
               context.config,
               `Page contains ${page.titles.length} <title> elements.`,
               page,
+              { evidence: page.titles.map((title) => title || "<empty title>").join(" | ") },
             ),
           ]
         : [];
@@ -68,7 +72,7 @@ export const titleRules: PageRule[] = [
       scope: "page",
     },
     evaluate(page, context) {
-      if (page.kind === "not-found") return [];
+      if (!page.indexable) return [];
       const title = page.titles.length === 1 ? page.titles[0] : undefined;
       if (!title) return [];
       const { min, max } = context.config.titleLength;

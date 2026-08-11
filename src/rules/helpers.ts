@@ -20,6 +20,7 @@ export function finding(
     severity: config.severityOverrides[meta.id] ?? meta.defaultSeverity,
     scope: meta.scope,
     message,
+    description: meta.description,
     help: meta.help,
     path: page?.route,
     url: extra.url ?? page?.url,

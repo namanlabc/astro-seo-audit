@@ -1,7 +1,7 @@
 {
   "name": "astro-seo-audit",
-  "version": "0.3.2",
-  "description": "Score Astro SEO after every build with whole-site and single-page audits, regression gates, HTML reports, and SARIF.",
+  "version": "0.3.3",
+  "description": "Score Astro SEO after every build with whole-site and single-page audits, regression gates, an interactive HTML dashboard, and SARIF.",
   "type": "module",
   "license": "MIT",
   "author": "Naman Patel",
@@ -64,9 +64,9 @@
     }
   },
   "dependencies": {
-    "cheerio": "^1.1.2",
     "fast-glob": "^3.3.3",
     "fast-xml-parser": "^5.2.5",
+    "htmlparser2": "^10.1.0",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {

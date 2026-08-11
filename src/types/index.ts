@@ -34,6 +34,7 @@ export interface Finding {
   severity: Severity;
   scope: FindingScope;
   message: string;
+  description: string;
   help: string;
   path?: string | undefined;
   url?: string | undefined;
@@ -120,6 +121,7 @@ export interface PageResult {
   source?: string | undefined;
   kind: PageKind;
   indexable: boolean;
+  score: number;
   findings: Finding[];
   passedRules: string[];
   schemaTypes: string[];

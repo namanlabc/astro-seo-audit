@@ -13,6 +13,7 @@ export const descriptionRules: PageRule[] = [
       scope: "page",
     },
     evaluate(page, context) {
+      if (!page.indexable) return [];
       return page.descriptions.length === 0
         ? [finding(this.meta, context.config, "Page has no meta description.", page)]
         : [];
@@ -29,6 +30,7 @@ export const descriptionRules: PageRule[] = [
       scope: "page",
     },
     evaluate(page, context) {
+      if (!page.indexable) return [];
       return page.descriptions.some((description) => description.length === 0)
         ? [finding(this.meta, context.config, "Page contains an empty meta description.", page)]
         : [];
@@ -45,6 +47,7 @@ export const descriptionRules: PageRule[] = [
       scope: "page",
     },
     evaluate(page, context) {
+      if (!page.indexable) return [];
       return page.descriptions.length > 1
         ? [
             finding(
@@ -52,6 +55,11 @@ export const descriptionRules: PageRule[] = [
               context.config,
               `Page contains ${page.descriptions.length} meta descriptions.`,
               page,
+              {
+                evidence: page.descriptions
+                  .map((description) => description || "<empty description>")
+                  .join(" | "),
+              },
             ),
           ]
         : [];
@@ -68,7 +76,7 @@ export const descriptionRules: PageRule[] = [
       scope: "page",
     },
     evaluate(page, context) {
-      if (page.kind === "not-found") return [];
+      if (!page.indexable) return [];
       const description = page.descriptions.length === 1 ? page.descriptions[0] : undefined;
       if (!description) return [];
       const { min, max } = context.config.descriptionLength;

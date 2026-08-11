@@ -14,7 +14,7 @@ function socialRule(id: string, key: string, label: string): PageRule {
   return {
     meta,
     evaluate(page, context) {
-      if (page.kind === "not-found") return [];
+      if (!page.indexable) return [];
       return !page.social[key]?.some(Boolean)
         ? [finding(meta, context.config, `Page is missing ${label}.`, page)]
         : [];
@@ -38,7 +38,7 @@ export const socialSchemaRules: PageRule[] = [
       scope: "page",
     },
     evaluate(page, context) {
-      if (page.kind === "not-found") return [];
+      if (!page.indexable) return [];
       return !page.social["twitter:card"]?.some(Boolean)
         ? [finding(this.meta, context.config, "Page is missing twitter:card.", page)]
         : [];

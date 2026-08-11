@@ -1,5 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { mkdtemp } from "node:fs/promises";
+import os from "node:os";
 import { describe, expect, it } from "vitest";
 import { runCli } from "../src/cli/run.js";
 
@@ -17,6 +19,7 @@ function io(cwd: string) {
       cwd,
       env: {},
       isTTY: false,
+      platform: "win32" as const,
     },
   };
 }
@@ -30,7 +33,7 @@ describe("CLI", () => {
       mode: "site",
       score: 100,
       pagesScanned: 4,
-      version: "0.3.0",
+      version: "0.3.3",
     });
     expect(report.pages).toBeInstanceOf(Array);
     expect(report.siteFindings).toBeInstanceOf(Array);
@@ -45,7 +48,7 @@ describe("CLI", () => {
       requestedPage: "/about/",
       score: 100,
       pagesScanned: 1,
-      version: "0.3.0",
+      version: "0.3.3",
       siteFindings: [],
       sitePassedRules: [],
     });
@@ -55,7 +58,28 @@ describe("CLI", () => {
     const output = io(path.join(fixtures, "healthy"));
     expect(await runCli(["--page", "/about/", "--no-color"], output.adapter)).toBe(0);
     expect(output.stdout.join("")).toContain("Page-only audit. Site-wide checks were skipped.");
-    expect(output.stdout.join("")).toContain("Page result");
+    expect(output.stdout.join("")).toContain("Page audit");
+    expect(output.stdout.join("")).toContain("Passed areas");
+    expect(output.stdout.join("")).toContain("Ready to publish");
+  });
+
+  it("gives evidence, rationale, and a fix in a page audit", async () => {
+    const output = io(path.join(fixtures, "problematic"));
+    expect(await runCli(["--page", "/", "--no-color", "--fail-on", "error"], output.adapter)).toBe(
+      1,
+    );
+    const text = output.stdout.join("");
+    expect(text).toContain("Why it matters:");
+    expect(text).toContain("How to fix:");
+    expect(text).toContain("Found:");
+  });
+
+  it("explains that a missing build may be an unbuilt or failed Astro build", async () => {
+    const emptyProject = await mkdtemp(path.join(os.tmpdir(), "astro-seo-empty-"));
+    const output = io(emptyProject);
+    expect(await runCli([], output.adapter)).toBe(2);
+    expect(output.stderr.join("")).toContain("Audit not started");
+    expect(output.stderr.join("")).toContain('Run "npm run build"');
   });
 
   it("returns a usage error when the generated page does not exist", async () => {
@@ -92,5 +116,18 @@ describe("CLI", () => {
     );
     expect(await runCli(["--output", target], output.adapter)).toBe(0);
     expect(output.stdout.join("")).toContain("SEO report written");
+    expect(output.stdout.join("")).toContain("Open it now: start");
+  });
+
+  it("shows the next Windows command after writing a relative HTML report", async () => {
+    const output = io(path.join(fixtures, "healthy"));
+    expect(await runCli(["--output", "astro-seo-report.html"], output.adapter)).toBe(0);
+    expect(output.stdout.join("")).toContain("Open it now: start .\\astro-seo-report.html");
+  });
+
+  it("does not show a browser command for machine-readable reports", async () => {
+    const output = io(path.join(fixtures, "healthy"));
+    expect(await runCli(["--output", "astro-seo-report.json"], output.adapter)).toBe(0);
+    expect(output.stdout.join("")).not.toContain("Open it now:");
   });
 });

@@ -17,6 +17,7 @@ export interface CliIo {
   cwd: string;
   env: NodeJS.ProcessEnv;
   isTTY: boolean;
+  platform?: NodeJS.Platform;
 }
 
 export async function runCli(
@@ -27,6 +28,7 @@ export async function runCli(
     cwd: process.cwd(),
     env: process.env,
     isTTY: Boolean(process.stdout.isTTY),
+    platform: process.platform,
   },
 ): Promise<number> {
   try {
@@ -65,7 +67,12 @@ export async function runCli(
       const target = path.resolve(io.cwd, options.output);
       await mkdir(path.dirname(target), { recursive: true });
       await writeFile(target, output, "utf8");
-      if (!options.quiet) io.stdout(`SEO report written to ${options.output}\n`);
+      if (!options.quiet) {
+        io.stdout(`SEO report written to ${options.output}\n`);
+        if (options.format === "html") {
+          io.stdout(`Open it now: ${openReportCommand(options.output, io.platform)}\n`);
+        }
+      }
     } else {
       io.stdout(output);
     }
@@ -82,6 +89,22 @@ export async function runCli(
     io.stderr(`Astro SEO Audit: ${error instanceof Error ? error.message : String(error)}\n`);
     return 2;
   }
+}
+
+function openReportCommand(output: string, platform = process.platform): string {
+  if (platform === "win32") {
+    const windowsPath = output.replaceAll("/", "\\");
+    const target = path.win32.isAbsolute(windowsPath) ? windowsPath : `.\\${windowsPath}`;
+    return `start ${quoteCommandPath(target)}`;
+  }
+
+  const target = path.isAbsolute(output) ? output : `./${output}`;
+  const command = platform === "darwin" ? "open" : "xdg-open";
+  return `${command} ${quoteCommandPath(target)}`;
+}
+
+function quoteCommandPath(value: string): string {
+  return /\s/.test(value) ? `"${value.replaceAll('"', '\\"')}"` : value;
 }
 
 function hasQualifyingFinding(

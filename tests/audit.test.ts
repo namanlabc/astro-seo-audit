@@ -44,6 +44,7 @@ describe("site audit", () => {
     expect(report.pages[0]).toMatchObject({
       path: "/about/",
       file: "about/index.html",
+      score: 100,
     });
     expect(report.siteFindings).toEqual([]);
     expect(report.sitePassedRules).toEqual([]);
@@ -99,5 +100,33 @@ describe("site audit", () => {
         .filter((finding) => finding.ruleId === "links.broken-internal")
         .every((finding) => finding.severity === "info"),
     ).toBe(true);
+  });
+
+  it("does not clutter non-indexable pages with snippet and social metadata advice", async () => {
+    const report = await audit({ cwd: path.join(fixtures, "problematic") });
+    const page = report.pages.find((candidate) => candidate.path === "/missing-title/");
+    const ids = page?.findings.map((finding) => finding.ruleId) ?? [];
+
+    expect(ids).toContain("title.missing");
+    expect(ids).toContain("robots.noindex");
+    expect(ids).not.toEqual(
+      expect.arrayContaining([
+        "description.missing",
+        "og.title-missing",
+        "og.description-missing",
+        "og.image-missing",
+        "og.url-missing",
+        "twitter.card-missing",
+      ]),
+    );
+  });
+
+  it("includes attributable site-wide findings in each page score", async () => {
+    const siteReport = await audit({ cwd: path.join(fixtures, "problematic") });
+    const pageReport = await audit({ cwd: path.join(fixtures, "problematic"), page: "/" });
+
+    expect(siteReport.pages.find((page) => page.path === "/")?.score).toBeLessThan(
+      pageReport.pages[0]?.score ?? 0,
+    );
   });
 });

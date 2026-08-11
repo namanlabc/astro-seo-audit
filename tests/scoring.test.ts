@@ -10,6 +10,7 @@ function fakeFinding(ruleId: string, severity: Finding["severity"]): Finding {
     severity,
     scope: "page",
     message: "Test",
+    description: "Test",
     help: "Test",
   };
 }

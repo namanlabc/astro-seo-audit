@@ -10,9 +10,9 @@
 
 Astro SEO Audit inspects the HTML your Astro site actually generates, gives it an explainable 0–100 health score, and catches technical and on-page SEO problems before they reach production.
 
-Audit the whole site before a deploy or check one new page while you are writing it. Add a baseline to block only new regressions, then send the results to your terminal, an HTML report, JSON, or GitHub Code Scanning through SARIF.
+Audit the whole site before a deploy or check one new page while you are writing it. Add a baseline to block only new regressions, then explore the results in the compact terminal output, a searchable standalone HTML dashboard, JSON, or GitHub Code Scanning through SARIF.
 
-**Nothing to host. No browser. No native binary. No telemetry.**
+**Nothing to host. No headless browser. No native binary. No telemetry.**
 
 ```text
 Astro SEO Audit
@@ -26,14 +26,20 @@ Astro SEO Audit health score: 87/100
 ⓘ Notices      8
 ✓ Checks passed 328
 
-Top issues
+Issues by type
 
-✕ links.broken-internal
-  /food-wheel/ → /foods/
+✕ Broken internal link
+  links.broken-internal · 3 findings · 3 affected URLs
+  /food-wheel/  /meal-picker/  /dinner-wheel/
 
-⚠ canonical.missing /wheel-of-doom/
-  Indexable page has no canonical link.
+⚠ Missing canonical
+  canonical.missing · 14 findings · 14 affected URLs
+  /wheel-of-doom/  /yes-or-no-wheel/  /random-animal/  +11 more
+
+Open the searchable report: npx astro-seo-audit --output astro-seo-report.html
 ```
+
+The terminal stays intentionally compact even on sites with thousands of generated pages. It groups repeated findings by rule, samples affected URLs, and points to the searchable HTML dashboard for the complete list.
 
 ## Why use it
 
@@ -45,7 +51,7 @@ Astro sites can generate metadata through layouts, integrations, Markdown, MDX, 
 | Check only a new or updated page    | Runs a fast route-level audit with its own 0–100 score                   |
 | Adopt checks on an established site | Baselines existing findings and fails only on newly introduced problems  |
 | Understand what changed             | Explains every finding, penalty, severity, and likely static source file |
-| Use results outside the terminal    | Produces JSON, standalone HTML, and SARIF 2.1 reports                    |
+| Use results outside the terminal    | Produces a searchable HTML dashboard, JSON, and SARIF 2.1 reports        |
 
 Under the hood, it combines:
 
@@ -61,10 +67,19 @@ Under the hood, it combines:
 
 It runs locally. There is no telemetry, analytics, content upload, or AI API.
 
+## What's new in v0.3.3
+
+- A compact terminal summary groups repeated findings instead of dumping every URL.
+- The standalone HTML report is now a searchable dashboard with severity filters, issue drill-down, page search, fixed 30-URL pagination, and detailed per-page inspection.
+- Page-only audits show an actual page score, evidence, why each issue matters, a suggested fix, and grouped passed areas.
+- Missing-build errors now distinguish an unbuilt site from a failed Astro build and tell the user what to run next.
+- Intentionally non-indexable pages no longer receive irrelevant description and social-preview warnings; generated 404 `noindex` directives are treated as expected.
+- The HTML parser dependency was simplified, removing the deprecated `whatwg-encoding` install warning.
+
 ## Requirements
 
 - Node.js 20 or newer
-- an Astro static build (normally `dist/`)
+- generated static HTML (`dist/` in Astro by default)
 
 ## Installation
 
@@ -78,6 +93,31 @@ Or install it manually:
 
 ```bash
 npm install --save-dev astro-seo-audit
+```
+
+## Pick the workflow you need
+
+Build the site first, then choose the smallest useful report:
+
+| Goal                       | Command                                              | Result                                                                            |
+| -------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Check the complete site    | `npm run build && npx astro-seo-audit`               | Compact terminal summary with every generated page scanned                        |
+| Explore every URL visually | `npx astro-seo-audit --output astro-seo-report.html` | Searchable local dashboard with filters, 30-row pagination, and page drill-down   |
+| Check one new page         | `npx astro-seo-audit --page /blog/new-post/`         | Focused page score with evidence, explanations, suggested fixes, and passed areas |
+| Enforce SEO in CI          | `npx astro-seo-audit --fail-on warning`              | Non-zero exit when a warning or error is found                                    |
+
+Open the generated HTML report in any browser. It is one portable file with no server, account, remote assets, or content upload required.
+After writing the file, the CLI prints the correct command to open it on your operating system, so you do not have to remember the command below.
+
+```bash
+# Windows PowerShell
+start .\astro-seo-report.html
+
+# macOS
+open ./astro-seo-report.html
+
+# Linux
+xdg-open ./astro-seo-report.html
 ```
 
 ## Quick start: audit every build
@@ -100,9 +140,10 @@ The integration audits Astro's resolved output directory, including custom `outD
 Prefer an on-demand audit? Build the site and run the CLI without changing `astro.config.mjs`:
 
 ```bash
-npm run build
-npx astro-seo-audit
+npm run build && npx astro-seo-audit
 ```
+
+The audit runs only if the Astro build succeeds. If the build fails, fix that build error first; no `dist/` report can be audited yet.
 
 Use it as a production quality gate and write a visual report:
 
@@ -146,7 +187,7 @@ astro-seo-audit [directory] [options]
 
 --dir <path>          Audit a specific build directory
 --page <route>        Audit one generated page and skip site-wide checks
---format <format>     terminal, json, or html
+--format <format>     terminal, json, html, or sarif
 --output <file>       Write a report; .html selects HTML automatically
 --baseline <file>     Report and fail only on findings absent from a baseline
 --write-baseline <file>  Save current findings as an adoption baseline
@@ -223,11 +264,11 @@ Write it to a file:
 npx astro-seo-audit --output seo-report.json
 ```
 
-The JSON is a machine-readable model rather than terminal text. It includes project discovery, the score breakdown, summary counts, normalized page results, passed rule IDs, schema types, page findings, site findings, site-wide passed rules, and a flat findings array.
+The JSON is a machine-readable model rather than terminal text. It includes project discovery, the site score breakdown, summary counts, normalized page results with individual page scores, passed rule IDs, schema types, page findings, site findings, site-wide passed rules, and a flat findings array.
 
 ```json
 {
-  "version": "0.3.1",
+  "version": "0.3.3",
   "mode": "site",
   "score": 87,
   "scoreBreakdown": {
@@ -253,7 +294,15 @@ Generate a standalone report that can be opened locally or uploaded as a CI arti
 npx astro-seo-audit --output astro-seo-report.html
 ```
 
-The responsive report includes the health score, severity totals, actionable findings, evidence, help text, and a page-by-page summary. It has no remote assets or scripts and does not upload site content.
+The responsive report behaves like a lightweight local SEO dashboard. It groups problems by rule, lets you filter by severity, searches routes and source hints, shows 30 URLs at a time with Previous/Next and compact page-number controls, filters down to URLs affected by one issue, and opens a detailed page view with:
+
+- the page's own 0–100 score and likely Astro source file;
+- every finding, including the value or evidence that triggered it;
+- a plain-language explanation of why the issue matters;
+- a specific suggested fix; and
+- grouped passed areas and detected structured-data types.
+
+All pages and findings remain inside the report, but only one manageable page of rows is rendered at a time. The dashboard has no remote assets, makes no network requests, and does not upload site content.
 
 ## GitHub annotations with SARIF
 
@@ -393,3 +442,5 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md), especially th
 ## License
 
 [MIT](LICENSE). Astro SEO Audit is an independent community project and is not an official Astro package.
+
+Built by [Naman Labs](https://x.com/namanlabs).

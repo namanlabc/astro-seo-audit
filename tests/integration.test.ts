@@ -24,6 +24,6 @@ describe("Astro integration", () => {
     } as never);
 
     const report = JSON.parse(await readFile(output, "utf8")) as Record<string, unknown>;
-    expect(report).toMatchObject({ version: "0.3.0", score: 100, pagesScanned: 4 });
+    expect(report).toMatchObject({ version: "0.3.3", score: 100, pagesScanned: 4 });
   });
 });

@@ -17,7 +17,7 @@ import type {
   PageResult,
 } from "./types/index.js";
 
-export const VERSION = "0.3.0";
+export const VERSION = "0.3.3";
 
 export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
   const cwd = path.resolve(options.cwd ?? process.cwd());
@@ -44,7 +44,7 @@ export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
     : await discoverPages(buildDir, config);
   if (pages.length === 0) {
     throw new Error(
-      `No generated HTML files were found in ${buildDir}. Build the Astro site first.`,
+      `Audit not started: no generated HTML was found in ${buildDir}. This usually means the site has not been built yet or the previous Astro build failed. Run "npm run build" and confirm it finishes successfully before running Astro SEO Audit again.`,
     );
   }
 
@@ -77,6 +77,7 @@ export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
       source: sourceHints.get(normalizeSourceHintRoute(page.route)),
       kind: page.kind,
       indexable: page.indexable,
+      score: calculateScore(findings).score,
       findings,
       passedRules,
       schemaTypes: [...new Set(page.schemas.flatMap((schema) => schema.types))],
@@ -96,6 +97,13 @@ export async function audit(options: AuditOptions = {}): Promise<AuditReport> {
         sitePassedRules.push(rule.meta.id);
       } else siteFindings.push(...result);
     }
+  }
+
+  for (const page of pageResults) {
+    const relatedSiteFindings = siteFindings.filter(
+      (finding) => finding.path === page.path || finding.relatedPaths?.includes(page.path),
+    );
+    page.score = calculateScore([...page.findings, ...relatedSiteFindings]).score;
   }
 
   const findings = [...pageResults.flatMap((page) => page.findings), ...siteFindings];
@@ -139,6 +147,8 @@ async function assertDirectory(directory: string): Promise<void> {
   try {
     await access(directory);
   } catch {
-    throw new Error(`Build directory not found: ${directory}. Run astro build or pass --dir.`);
+    throw new Error(
+      `Audit not started: build directory not found at ${directory}. Run "npm run build" and confirm it finishes successfully, or pass the generated directory with --dir.`,
+    );
   }
 }

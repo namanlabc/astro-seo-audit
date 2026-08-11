@@ -1,5 +1,5 @@
-import * as cheerio from "cheerio";
-import type { Element } from "domhandler";
+import { DomUtils, ElementType, parseDocument } from "htmlparser2";
+import type { ChildNode, Element } from "domhandler";
 import type { NormalizedPage, PageKind, SchemaBlock } from "../types/index.js";
 
 export interface ParsePageInput {
@@ -12,53 +12,71 @@ export interface ParsePageInput {
 }
 
 export function parseHtmlPage(input: ParsePageInput): NormalizedPage {
-  const $ = cheerio.load(input.html);
+  const document = parseDocument(input.html, {
+    lowerCaseAttributeNames: true,
+    lowerCaseTags: true,
+    recognizeSelfClosing: true,
+  });
+  const elements = collectElements(document.children);
   const kind = input.kind ?? "page";
-  const titles = $("title")
-    .map((_, element) => cleanText($(element).text()))
-    .get();
-  const descriptions = metaValues($, "name", "description");
-  const canonicals = $("link")
-    .filter((_, element) => relTokens(element).includes("canonical"))
-    .map((_, element) => ($(element).attr("href") ?? "").trim())
-    .get();
-  const robotsDirectives = $("meta")
-    .filter((_, element) => {
-      const name = ($(element).attr("name") ?? "").toLowerCase();
+  const titles = elements
+    .filter((element) => element.name === "title")
+    .map((element) => cleanText(DomUtils.textContent(element)));
+  const descriptions = elements
+    .filter(
+      (element) =>
+        element.name === "meta" && attribute(element, "name").toLowerCase() === "description",
+    )
+    .map((element) => attribute(element, "content"));
+  const canonicals = elements
+    .filter((element) => element.name === "link" && relTokens(element).includes("canonical"))
+    .map((element) => attribute(element, "href"));
+  const robotsDirectives = elements
+    .filter((element) => {
+      if (element.name !== "meta") return false;
+      const name = attribute(element, "name").toLowerCase();
       return name === "robots" || name === "googlebot";
     })
-    .map((_, element) => $(element).attr("content") ?? "")
-    .get()
-    .flatMap((value) => value.split(/[\s,]+/))
+    .flatMap((element) => attribute(element, "content").split(/[\s,]+/))
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean);
-  const headings = $("h1, h2, h3, h4, h5, h6")
-    .map((_, element) => ({
-      level: Number(element.tagName.slice(1)),
-      text: cleanText($(element).text()),
-    }))
-    .get();
-  const images = $("img")
-    .map((_, element) => ({
-      src: ($(element).attr("src") ?? "").trim(),
-      alt: $(element).attr("alt") ?? null,
-    }))
-    .get();
-  const links = $("a")
-    .map((_, element) => ({
-      href: ($(element).attr("href") ?? "").trim(),
-      text: cleanText($(element).text()),
-    }))
-    .get();
+  const headings = elements
+    .filter((element) => /^h[1-6]$/.test(element.name))
+    .map((element) => ({
+      level: Number(element.name.slice(1)),
+      text: cleanText(DomUtils.textContent(element)),
+    }));
+  const images = elements
+    .filter((element) => element.name === "img")
+    .map((element) => ({
+      src: attribute(element, "src"),
+      alt: Object.hasOwn(element.attribs, "alt") ? (element.attribs.alt ?? "") : null,
+    }));
+  const links = elements
+    .filter((element) => element.name === "a")
+    .map((element) => ({
+      href: attribute(element, "href"),
+      text: cleanText(DomUtils.textContent(element)),
+    }));
   const social: Record<string, string[]> = {};
-  $("meta").each((_, element) => {
-    const key = (($(element).attr("property") ?? $(element).attr("name")) || "").toLowerCase();
-    if (!key.startsWith("og:") && !key.startsWith("twitter:")) return;
-    (social[key] ??= []).push(($(element).attr("content") ?? "").trim());
-  });
-  const schemas = $('script[type="application/ld+json" i]')
-    .map((_, element) => parseSchema($(element).text()))
-    .get();
+  for (const element of elements.filter((candidate) => candidate.name === "meta")) {
+    const key = (attribute(element, "property") || attribute(element, "name")).toLowerCase();
+    if (!key.startsWith("og:") && !key.startsWith("twitter:")) continue;
+    (social[key] ??= []).push(attribute(element, "content"));
+  }
+  const schemas = elements
+    .filter(
+      (element) =>
+        element.name === "script" &&
+        attribute(element, "type").toLowerCase() === "application/ld+json",
+    )
+    .map((element) => parseSchema(DomUtils.textContent(element)));
+  const htmlElement = elements.find((element) => element.name === "html");
+  const lang = htmlElement
+    ? Object.hasOwn(htmlElement.attribs, "lang")
+      ? attribute(htmlElement, "lang")
+      : null
+    : null;
 
   return {
     filePath: input.filePath,
@@ -76,24 +94,33 @@ export function parseHtmlPage(input: ParsePageInput): NormalizedPage {
     images,
     links,
     social,
-    lang: ($("html").first().attr("lang") ?? null)?.trim() ?? null,
+    lang,
     schemas,
   };
 }
 
-function metaValues($: cheerio.CheerioAPI, attribute: string, expected: string): string[] {
-  return $("meta")
-    .filter(
-      (_, element) =>
-        ($(element).attr(attribute) ?? "").trim().toLowerCase() === expected.toLowerCase(),
-    )
-    .map((_, element) => ($(element).attr("content") ?? "").trim())
-    .get();
+function collectElements(nodes: ChildNode[]): Element[] {
+  const elements: Element[] = [];
+  const visit = (node: ChildNode): void => {
+    if (
+      node.type === ElementType.Tag ||
+      node.type === ElementType.Script ||
+      node.type === ElementType.Style
+    ) {
+      elements.push(node);
+    }
+    if ("children" in node) node.children.forEach(visit);
+  };
+  nodes.forEach(visit);
+  return elements;
+}
+
+function attribute(element: Element, name: string): string {
+  return (element.attribs[name] ?? "").trim();
 }
 
 function relTokens(element: Element): string[] {
-  const rel = element.attribs?.rel ?? "";
-  return rel.toLowerCase().split(/\s+/).filter(Boolean);
+  return attribute(element, "rel").toLowerCase().split(/\s+/).filter(Boolean);
 }
 
 function parseSchema(raw: string): SchemaBlock {

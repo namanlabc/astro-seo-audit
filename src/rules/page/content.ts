@@ -13,6 +13,7 @@ export const contentRules: PageRule[] = [
       scope: "page",
     },
     evaluate(page, context) {
+      if (page.kind === "not-found") return [];
       return page.robotsDirectives.includes("noindex")
         ? [finding(this.meta, context.config, "Page contains a noindex directive.", page)]
         : [];
