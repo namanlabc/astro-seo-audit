@@ -3,10 +3,6 @@ name: Publish to npm
 on:
   release:
     types: [published]
-  push:
-    branches: [main]
-    paths:
-      - .github/publish-v0.3.3
 
 permissions:
   contents: read
@@ -15,7 +11,7 @@ permissions:
 jobs:
   publish:
     name: Test and publish
-    if: ${{ github.event_name == 'push' || !github.event.release.prerelease }}
+    if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
 
     steps:
@@ -38,16 +34,11 @@ jobs:
       - name: Run checks
         run: npm run check
 
-      - name: Verify package version
+      - name: Verify release tag matches package version
         run: |
           PACKAGE_VERSION="$(node --print "require('./package.json').version")"
-          if [ "$GITHUB_EVENT_NAME" = "release" ]; then
-            if [ "$GITHUB_REF_NAME" != "v$PACKAGE_VERSION" ]; then
-              echo "::error::Release tag $GITHUB_REF_NAME must match package version v$PACKAGE_VERSION."
-              exit 1
-            fi
-          elif [ "$PACKAGE_VERSION" != "0.3.3" ]; then
-            echo "::error::One-time publish expected package version 0.3.3, found $PACKAGE_VERSION."
+          if [ "$GITHUB_REF_NAME" != "v$PACKAGE_VERSION" ]; then
+            echo "::error::Release tag $GITHUB_REF_NAME must match package version v$PACKAGE_VERSION."
             exit 1
           fi
 
