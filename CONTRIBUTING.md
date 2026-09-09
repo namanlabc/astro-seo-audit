@@ -60,4 +60,6 @@ Rule IDs use a dotted namespace, such as `canonical.missing` or `links.broken-in
 
 Keep each pull request focused. Describe the behavior, explain SEO assumptions, list tests, and include fixture changes. Run `npm run check` before submitting.
 
+Documentation-only changes do not need fixture updates. Code changes that alter findings, scoring, CLI output, or generated reports should include focused regression coverage for the changed behavior.
+
 By contributing, you agree that your contribution is licensed under the MIT License.
